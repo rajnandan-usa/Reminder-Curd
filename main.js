@@ -70,6 +70,7 @@ $(document).ready(function () {
             var deleteButton = $('<button>').addClass('btn btn-danger btn-delete')
                 .attr('data-toggle', 'modal')
                 .attr('data-target', '#deleteModal')
+                .attr('data-id', user.id)
                 .text('Delete');
     
             actionsCell.append(editButton);
@@ -148,18 +149,11 @@ $(document).on('click', '.btn-edit', function () {
     });
 });
 
-
-
-    // Update user - Form submission in edit modal
-// Update user - Form submission in edit modal
 $(document).on('submit', '#editUserForm', function (e) {
     e.preventDefault();
-    
-    // Assuming that you have set the data-id attribute on the form element
+
     var userId = $(this).data('id');
     console.log('userId:', userId);
-    
-    // Create FormData and append the user ID
     var formData = new FormData(this);
     formData.append('id', userId);
     
@@ -170,9 +164,8 @@ $(document).on('submit', '#editUserForm', function (e) {
         processData: false,
         contentType: false,
         success: function (response) {
-            console.log(response);  // Log the response from the server
+            console.log(response); 
             loadUsers();
-            // Close the modal
             $('#editModal').modal('hide');
         },
         error: function (xhr, status, error) {
@@ -181,11 +174,6 @@ $(document).on('submit', '#editUserForm', function (e) {
     });
 });
 
-    
-    
-    
-    
-    
     
 
     // Delete user - Show delete confirmation modal
@@ -197,17 +185,20 @@ $(document).on('submit', '#editUserForm', function (e) {
             data: { id: userId },
             success: function (data) {
                 $('#deleteModal .modal-body').html(data);
+                // Set the data-id attribute on the confirmDelete button
+                $('#confirmDelete').data('id', userId);
                 $('#deleteModal').modal('show');
             }
         });
     });
-
+    
     // Confirm delete - Delete user
     $(document).on('click', '#confirmDelete', function () {
+        // Get the user ID from the data-id attribute
         var userId = $(this).data('id');
         $.ajax({
             type: 'POST',
-            url: 'delete_user.php',
+            url: 'delete.php',
             data: { id: userId },
             success: function () {
                 // Reload users after deleting a user
@@ -217,4 +208,5 @@ $(document).on('submit', '#editUserForm', function (e) {
             }
         });
     });
+    
 });
