@@ -84,8 +84,6 @@ $(document).ready(function () {
         table.DataTable();
     }
     
-
-    // Edit user - Show edit modal
 // Move the event listener outside the success callback
 $(document).on('click', '.btn-edit', function () {
     var userId = $(this).data('id');
@@ -108,43 +106,39 @@ $(document).on('click', '.btn-edit', function () {
             $('#contactPhone').val(data.contact_phone);
             $('#editHelpline').val(data.helpline);
             $('#editNotes').val(data.notes);
-
+            $('#editUserForm').data('id', userId);
             // Set values for radio buttons
             $('input[name="type"]').prop('checked', false);
             $('input[name="type"][value="' + data.type + '"]').prop('checked', true);
 
             // Set values for services_date inputs
-            // Set values for services_date inputs
-// Set values for services_date inputs
-var servicesDates = JSON.parse(data.services_date.replace(/\\/g, ''));
+            var servicesDates = JSON.parse(data.services_date.replace(/\\/g, ''));
 
-$('#dateInputs').empty();
+            $('#dateInputs').empty();
 
-servicesDates.forEach(function (date) {
-    var dateInput = $('<div class="form-row mb-2">');
-    dateInput.append('<div class="col"><label for="services_date">Services Date:</label>');
-    dateInput.append('<input type="date" name="services_date[]" class="form-control" value="' + date + '" /></div>');
-    dateInput.append('<div class="col-auto"><button type="button" class="btn btn-danger btn-remove">Remove</button></div></div>');
+            servicesDates.forEach(function (date) {
+                var dateInput = $('<div class="form-row mb-2">');
+                dateInput.append('<div class="col"><label for="services_date">Services Date:</label>');
+                dateInput.append('<input type="date" name="services_date[]" class="form-control" value="' + date + '" /></div>');
+                dateInput.append('<div class="col-auto"><button type="button" class="btn btn-danger btn-remove">Remove</button></div></div>');
 
-    $('#dateInputs').append(dateInput);
-});
+                $('#dateInputs').append(dateInput);
+            });
 
-// Add event listener for the "Remove" button
-$(document).on('click', '.btn-remove', function () {
-    $(this).closest('.form-row').remove();
-});
+            // Add event listener for the "Remove" button
+            $(document).on('click', '.btn-remove', function () {
+                $(this).closest('.form-row').remove();
+            });
 
-// Add event listener for the "Add" button
-$('#addDateBtn').on('click', function () {
-    var newDateInput = $('<div class="form-row mb-2">');
-    newDateInput.append('<div class="col"><label for="services_date">Services Date:</label>');
-    newDateInput.append('<input type="date" name="services_date[]" class="form-control" /></div>');
-    newDateInput.append('<div class="col-auto"><button type="button" class="btn btn-danger btn-remove">Remove</button></div></div>');
+            // Add event listener for the "Add" button
+            $('#addDateBtn').on('click', function () {
+                var newDateInput = $('<div class="form-row mb-2">');
+                newDateInput.append('<div class="col"><label for="services_date">Services Date:</label>');
+                newDateInput.append('<input type="date" name="services_date[]" class="form-control" /></div>');
+                newDateInput.append('<div class="col-auto"><button type="button" class="btn btn-danger btn-remove">Remove</button></div></div>');
 
-    $('#dateInputs').append(newDateInput);
-});
-
-
+                $('#dateInputs').append(newDateInput);
+            });
 
             $('#editModal').modal('show');
         },
@@ -157,25 +151,40 @@ $('#addDateBtn').on('click', function () {
 
 
     // Update user - Form submission in edit modal
-    $(document).on('submit', '#editUserForm', function (e) {
-        e.preventDefault();
+// Update user - Form submission in edit modal
+$(document).on('submit', '#editUserForm', function (e) {
+    e.preventDefault();
     
-        var formData = new FormData(this);
+    // Assuming that you have set the data-id attribute on the form element
+    var userId = $(this).data('id');
+    console.log('userId:', userId);
     
-        $.ajax({
-            type: 'POST',
-            url: 'edit.php',
-            data: formData,
-            processData: false,  // Remove this line
-            contentType: false,  // Remove this line
-            success: function () {
-                // Reload users after updating a user
-                loadUsers();
-                // Close the modal
-                $('#editModal').modal('hide');
-            }
-        });
+    // Create FormData and append the user ID
+    var formData = new FormData(this);
+    formData.append('id', userId);
+    
+    $.ajax({
+        type: 'POST',
+        url: 'edit.php',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            console.log(response);  // Log the response from the server
+            loadUsers();
+            // Close the modal
+            $('#editModal').modal('hide');
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr.responseText);
+        }
     });
+});
+
+    
+    
+    
+    
     
     
 

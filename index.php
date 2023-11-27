@@ -330,7 +330,7 @@
                         <label for="file">Upload File:</label>
                         <input type="file" name="file" class="form-control" id="file">
                     </div>
-                    <button type="submit" name="submit" class="btn btn-primary">Add Item</button>
+                    <button type="submit" name="submit" class="btn btn-primary">Update Item</button>
                 </form>
             </div>
         </div>

@@ -3,7 +3,7 @@ include 'connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $userId = $_POST['id'];
-    $query = "DELETE FROM users WHERE id = $userId";
+    $query = "DELETE FROM reminders WHERE id = $userId";
     $result = mysqli_query($conn, $query);
 
     if ($result) {
