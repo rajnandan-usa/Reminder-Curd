@@ -1,47 +1,39 @@
 <?php
 include 'connect.php';
 
-// Get today's date
 $today = date('Y-m-d');
-
-$thisWeekStart = date('Y-m-d', strtotime('monday this week'));
-$thisWeekEnd = date('Y-m-d', strtotime('sunday this week'));
-$nextWeekStart = date('Y-m-d', strtotime('monday next week'));
-$nextWeekEnd = date('Y-m-d', strtotime('sunday next week'));
 
 $query = "SELECT * FROM reminders";
 $result = mysqli_query($conn, $query);
 
 if ($result) {
-    $todayExpiry = [];
-    $tomorrowExpiry = [];
-    $thisWeekExpiry = [];
-    $nextWeekExpiry = [];
-    $upcomingExpiry = [];
+    $expiryData = [
+        'todayExpiry' => [],
+        'tomorrowExpiry' => [],
+        'thisWeekExpiry' => [],
+        'nextWeekExpiry' => [],
+        'upcomingExpiry' => [],
+    ];
 
     while ($row = mysqli_fetch_assoc($result)) {
-        $expiryDate = $row['expiry_date'];
+        $servicesDates = json_decode($row['services_date'], true);
 
-        if ($expiryDate == $today) {
-            $todayExpiry[] = $row;
-        } elseif ($expiryDate == date('Y-m-d', strtotime('tomorrow'))) {
-            $tomorrowExpiry[] = $row;
-        } elseif ($expiryDate >= $thisWeekStart && $expiryDate <= $thisWeekEnd) {
-            $thisWeekExpiry[] = $row;
-        } elseif ($expiryDate >= $nextWeekStart && $expiryDate <= $nextWeekEnd) {
-            $nextWeekExpiry[] = $row;
-        } elseif ($expiryDate > $nextWeekEnd) {
-            $upcomingExpiry[] = $row;
+        if (in_array($today, $servicesDates)) {
+            $expiryData['todayExpiry'][$row['id']] = $row;
+        } if (in_array(date('Y-m-d', strtotime('tomorrow')), $servicesDates)) {
+            $expiryData['tomorrowExpiry'][$row['id']] = $row;
+        } if (date('Y-m-d', strtotime('monday this week')) <= $servicesDates[count($servicesDates) - 1] &&
+                  date('Y-m-d', strtotime('sunday this week')) >= $servicesDates[0]) {
+            $expiryData['thisWeekExpiry'][$row['id']] = $row;
+        } if (date('Y-m-d', strtotime('monday next week')) <= $servicesDates[count($servicesDates) - 1] &&
+                  date('Y-m-d', strtotime('sunday next week')) >= $servicesDates[0]) {
+            $expiryData['nextWeekExpiry'][$row['id']] = $row;
+        } if (end($servicesDates) > date('Y-m-d', strtotime('sunday next week'))) {
+            $expiryData['upcomingExpiry'][$row['id']] = $row;
         }
     }
-
-    echo json_encode([
-        'todayExpiry' => $todayExpiry,
-        'tomorrowExpiry' => $tomorrowExpiry,
-        'thisWeekExpiry' => $thisWeekExpiry,
-        'nextWeekExpiry' => $nextWeekExpiry,
-        'upcomingExpiry' => $upcomingExpiry,
-    ]);
+    var_dump($expiryData);
+    echo json_encode($expiryData);
 } else {
     echo json_encode(['error' => 'Unable to fetch user data.']);
 }

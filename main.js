@@ -43,6 +43,9 @@ $(document).ready(function () {
                 displayDataInTable(dataObj.thisWeekExpiry, '#thisWeekTable');
                 displayDataInTable(dataObj.nextWeekExpiry, '#nextWeekTable');
                 displayDataInTable(dataObj.upcomingExpiry, '#upcomingTable');
+            },
+            error: function (error) {
+                console.error('Error fetching data: ', error);
             }
         });
     }
@@ -51,39 +54,89 @@ $(document).ready(function () {
     function displayDataInTable(data, tableId) {
         var table = $(tableId);
     
-        data.forEach(function (user) {
-            var row = $('<tr>');
-            row.append($('<td>').text(user.id));
-            row.append($('<td>').text(user.name));
-            row.append($('<td>').text(user.contact_phone));
-            row.append($('<td>').text(user.type));
-            row.append($('<td>').text(user.start_date));
-            row.append($('<td>').text(user.expiry_date));
+        if (Array.isArray(data)) {
+            data.forEach(function (user) {
+                var servicesDateArray = JSON.parse(user.services_date);
+                var servicesDateString = servicesDateArray.join(', ');
+                var row = $('<tr>');
+                row.append($('<td>').text(user.id));
+                row.append($('<td>').text(user.name));
+                row.append($('<td>').text(user.contact_phone));
+                row.append($('<td>').text(user.type));
+                row.append($('<td>').text(user.start_date));
+                row.append($('<td>').text(user.expiry_date));
+                row.append($('<td>').text(servicesDateString));
     
-            var actionsCell = $('<td>');
-            var editButton = $('<button>').addClass('btn btn-primary btn-edit')
-            .attr('data-toggle', 'modal')
-            .attr('data-target', '#editModal')
-            .attr('data-id', user.id) 
-            .text('Edit');
-            
-            var deleteButton = $('<button>').addClass('btn btn-danger btn-delete')
-                .attr('data-toggle', 'modal')
-                .attr('data-target', '#deleteModal')
-                .attr('data-id', user.id)
-                .text('Delete');
+                var actionsCell = $('<td>');
+                var editButton = $('<button>').addClass('btn btn-primary btn-edit')
+                    .attr('data-toggle', 'modal')
+                    .attr('data-target', '#editModal')
+                    .attr('data-id', user.id)
+                    .text('Edit');
     
-            actionsCell.append(editButton);
-            actionsCell.append(deleteButton);
+                var deleteButton = $('<button>').addClass('btn btn-danger btn-delete')
+                    .attr('data-toggle', 'modal')
+                    .attr('data-target', '#deleteModal')
+                    .attr('data-id', user.id)
+                    .text('Delete');
     
-            row.append(actionsCell);
+                actionsCell.append(editButton);
+                actionsCell.append(deleteButton);
     
-            table.append(row);
-        });
+                row.append(actionsCell);
     
-        // Initialize DataTable for the table
-        table.DataTable();
+                table.append(row);
+            });
+    
+            // Initialize DataTable for the table
+            //table.DataTable();
+        } else if (typeof data === 'object') {
+            // Assuming data is an object with user objects
+            for (var id in data) {
+                if (data.hasOwnProperty(id)) {
+                    var user = data[id];
+                    var servicesDateArray = JSON.parse(user.services_date);
+                    var servicesDateString = servicesDateArray.join(', ');
+                    var row = $('<tr>');
+                    row.append($('<td>').text(user.id));
+                    row.append($('<td>').text(user.name));
+                    row.append($('<td>').text(user.contact_phone));
+                    row.append($('<td>').text(user.type));
+                    row.append($('<td>').text(user.start_date));
+                    row.append($('<td>').text(user.expiry_date));
+                    row.append($('<td>').text(servicesDateString));
+    
+                    var actionsCell = $('<td>');
+                    var editButton = $('<button>').addClass('btn btn-primary btn-edit')
+                        .attr('data-toggle', 'modal')
+                        .attr('data-target', '#editModal')
+                        .attr('data-id', user.id)
+                        .text('Edit');
+    
+                    var deleteButton = $('<button>').addClass('btn btn-danger btn-delete')
+                        .attr('data-toggle', 'modal')
+                        .attr('data-target', '#deleteModal')
+                        .attr('data-id', user.id)
+                        .text('Delete');
+    
+                    actionsCell.append(editButton);
+                    actionsCell.append(deleteButton);
+    
+                    row.append(actionsCell);
+    
+                    table.append(row);
+                }
+            }
+    
+            // Initialize DataTable for the table
+            //table.DataTable();
+        }
     }
+    
+    // Initial load of users
+    loadUsers();
+    
+    
     
 // Move the event listener outside the success callback
 $(document).on('click', '.btn-edit', function () {
@@ -174,9 +227,6 @@ $(document).on('submit', '#editUserForm', function (e) {
     });
 });
 
-    
-
-    // Delete user - Show delete confirmation modal
     $(document).on('click', '.btn-delete', function () {
         var userId = $(this).data('id');
         $.ajax({
@@ -185,14 +235,12 @@ $(document).on('submit', '#editUserForm', function (e) {
             data: { id: userId },
             success: function (data) {
                 $('#deleteModal .modal-body').html(data);
-                // Set the data-id attribute on the confirmDelete button
                 $('#confirmDelete').data('id', userId);
                 $('#deleteModal').modal('show');
             }
         });
     });
     
-    // Confirm delete - Delete user
     $(document).on('click', '#confirmDelete', function () {
         // Get the user ID from the data-id attribute
         var userId = $(this).data('id');
