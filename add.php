@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadFile)) {
             echo 'File is valid, and was successfully uploaded.';
         } else {
-            echo 'Possible file upload attack!';
+            $uploadFile = '';
         }
 
         $query = "INSERT INTO reminders (name, type, services_date, start_date, expiry_date, price, contact_name, contact_phone, helpline, notes, file)
