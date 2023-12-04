@@ -4,7 +4,6 @@ include 'connect.php';
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
     $userId = $_GET['id'];
 
-    // Use a prepared statement to avoid SQL injection
     $query = "SELECT * FROM reminders WHERE id = ?";
     $stmt = mysqli_prepare($conn, $query);
     mysqli_stmt_bind_param($stmt, 'i', $userId);
@@ -14,7 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
         $row = mysqli_fetch_assoc($result);
 
         if ($row) {
-            // Only echo the JSON data without any additional text
             echo json_encode($row);
         } else {
             echo json_encode(['error' => 'User not found']);
@@ -22,8 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
     } else {
         echo json_encode(['error' => 'Error executing statement']);
     }
-
-    // Close the statement
     mysqli_stmt_close($stmt);
 }
 
