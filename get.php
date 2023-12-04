@@ -1,41 +1,150 @@
 <?php
 include 'connect.php';
 
-$today = date('Y-m-d');
-
 $query = "SELECT * FROM reminders";
+
 $result = mysqli_query($conn, $query);
 
 if ($result) {
-    $expiryData = [
-        'todayExpiry' => [],
-        'tomorrowExpiry' => [],
-        'thisWeekExpiry' => [],
-        'nextWeekExpiry' => [],
-        'upcomingExpiry' => [],
-    ];
+    $rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-    while ($row = mysqli_fetch_assoc($result)) {
-        $servicesDates = json_decode($row['services_date'], true);
+    $upcomingDates = [];
+    $overdueDates = [];
+    $todayDates = [];
+    $tomorrowDates = [];
+    $thisWeekDates = [];
+    $nextWeekDates = [];
+    $thisWeekStart = date('Y-m-d', strtotime('monday this week'));
+    $thisWeekEnd = date('Y-m-d', strtotime('sunday this week'));
+    $nextWeekStart = date('Y-m-d', strtotime('monday next week'));
+    $nextWeekEnd = date('Y-m-d', strtotime('sunday next week'));
 
-        if (in_array($today, $servicesDates)) {
-            $expiryData['todayExpiry'][$row['id']] = $row;
-        } if (in_array(date('Y-m-d', strtotime('tomorrow')), $servicesDates)) {
-            $expiryData['tomorrowExpiry'][$row['id']] = $row;
-        } if (date('Y-m-d', strtotime('monday this week')) <= $servicesDates[count($servicesDates) - 1] &&
-                  date('Y-m-d', strtotime('sunday this week')) >= $servicesDates[0]) {
-            $expiryData['thisWeekExpiry'][$row['id']] = $row;
-        } if (date('Y-m-d', strtotime('monday next week')) <= $servicesDates[count($servicesDates) - 1] &&
-                  date('Y-m-d', strtotime('sunday next week')) >= $servicesDates[0]) {
-            $expiryData['nextWeekExpiry'][$row['id']] = $row;
-        } if (end($servicesDates) > date('Y-m-d', strtotime('sunday next week'))) {
-            $expiryData['upcomingExpiry'][$row['id']] = $row;
+    foreach ($rows as $row) {
+        $id = $row['id'];
+        $type = $row['type'];
+        $name = $row['name'];
+        $contact_phone = $row['contact_phone'];
+        $start_date = $row['start_date'];
+        $expiry_date = $row['expiry_date'];
+        $file = $row['file'];
+
+        $services_dates = json_decode($row['services_date']);
+        $services_dates_end = json_decode($row['services_date_end']);
+        $services_dates_remove = array_diff($services_dates, $services_dates_end ?? []);
+
+        $currentDate = date('Y-m-d');
+
+        foreach ($services_dates_remove as $service_date) {
+            $formattedDate = date('Y-m-d', strtotime($service_date));
+
+            if ($formattedDate < $currentDate) {
+
+                if (isset($overdueDates[$id])) {
+                    $overdueDates[$id]['dates'][] = $formattedDate;
+                } else {
+                    $overdueDates[$id] = [
+                        "id" => $id,
+                        "name" => $name,
+                        "contact_phone" => $contact_phone,
+                        "type" => $type,
+                        "start_date" => $start_date,
+                        "expiry_date" => $expiry_date,
+                        "file" => $file,
+                        "dates" => [$formattedDate]
+                    ];
+                }
+
+            } elseif ($formattedDate == $currentDate) {
+
+                if (isset($todayDates[$id])) {
+                    $todayDates[$id]['dates'][] = $formattedDate;
+                } else {
+                    $todayDates[$id] = [
+                        "id" => $id,
+                        "name" => $name,
+                        "contact_phone" => $contact_phone,
+                        "type" => $type,
+                        "start_date" => $start_date,
+                        "expiry_date" => $expiry_date,
+                        "file" => $file,
+                        "dates" => [$formattedDate]
+                    ];
+                }
+            } if ($formattedDate == date('Y-m-d', strtotime($currentDate . ' +1 day'))) {
+                if (isset($tomorrowDates[$id])) {
+                    $tomorrowDates[$id]['dates'][] = $formattedDate;
+                } else {
+                    $tomorrowDates[$id] = [
+                        "id" => $id,
+                        "name" => $name,
+                        "contact_phone" => $contact_phone,
+                        "type" => $type,
+                        "start_date" => $start_date,
+                        "expiry_date" => $expiry_date,
+                        "file" => $file,
+                        "dates" => [$formattedDate]
+                    ];
+                }
+
+            } if ($formattedDate <= $thisWeekStart = date('Y-m-d', strtotime('monday this week')) && $formattedDate <= $thisWeekEnd = date('Y-m-d', strtotime('sunday this week'))) {
+                if (isset($thisWeekDates[$id])) {
+                    $thisWeekDates[$id]['dates'][] = $formattedDate;
+                } else {
+                    $thisWeekDates[$id] = [
+                        "id" => $id,
+                        "name" => $name,
+                        "contact_phone" => $contact_phone,
+                        "type" => $type,
+                        "start_date" => $start_date,
+                        "expiry_date" => $expiry_date,
+                        "file" => $file,
+                        "dates" => [$formattedDate]
+                    ];
+                }
+            } if ($formattedDate > $nextWeekStart && $formattedDate <= $nextWeekEnd) {
+                if (isset($nextWeekDates[$id])) {
+                    $nextWeekDates[$id]['dates'][] = $formattedDate;
+                } else {
+                    $nextWeekDates[$id] = [
+                        "id" => $id,
+                        "name" => $name,
+                        "contact_phone" => $contact_phone,
+                        "type" => $type,
+                        "start_date" => $start_date,
+                        "expiry_date" => $expiry_date,
+                        "file" => $file,
+                        "dates" => [$formattedDate]
+                    ];
+                }
+            } else {
+                if (isset($upcomingDates[$id])) {
+                    $upcomingDates[$id]['dates'][] = $formattedDate;
+                } else {
+                    $upcomingDates[$id] = [
+                        "id" => $id,
+                        "name" => $name,
+                        "contact_phone" => $contact_phone,
+                        "type" => $type,
+                        "start_date" => $start_date,
+                        "expiry_date" => $expiry_date,
+                        "file" => $file,
+                        "dates" => [$formattedDate]
+                    ];
+                }
+            }
         }
     }
-    var_dump($expiryData);
-    echo json_encode($expiryData);
+
+    echo json_encode([
+        'upcomingDates' => $upcomingDates,
+        'overdueDates' => $overdueDates,
+        'todayDates' => $todayDates,
+        'tomorrowDates' => $tomorrowDates,
+        'thisWeekDates' => $thisWeekDates,
+        'nextWeekDates' => $nextWeekDates
+    ]);
 } else {
-    echo json_encode(['error' => 'Unable to fetch user data.']);
+    echo json_encode(['error' => mysqli_error($conn)]);
 }
 
 mysqli_close($conn);
