@@ -6,6 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $type = $_POST['type'];
     $services_dates = $_POST['services_date'];
+    $services_date_end = isset($_POST['services_date_end']) ? $_POST['services_date_end'] : NULL;
+    print_r($services_date_end);
     $start_date = $_POST['start_date'];
     $expiry_date = $_POST['expiry_date'];
     $price = $_POST['price'];
@@ -20,32 +22,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $serialized_dates = null;
     }
 
+    // Convert the array to a JSON string
+    if (is_array($services_date_end)) {
+        $services_date_end = json_encode($services_date_end);
+    }
+
+    $uploadFile = '';
+
     if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = 'uploads/';
         $uploadFile = $uploadDir . basename($_FILES['file']['name']);
-
+        $previousFile = 'uploads/'; 
+        if (file_exists($previousFile)) {
+            unlink($previousFile);
+        }
+    
         if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadFile)) {
             echo 'File is valid, and was successfully uploaded.';
         } else {
             echo 'Possible file upload attack!';
-            exit; // Exit the script if there's an issue with file upload
+            exit;
         }
-    } else {
-        $uploadFile = ''; // Set to an empty string if no file was uploaded
     }
+    
+    $fileUpdate = !empty($uploadFile) ? ", file = '$uploadFile'" : '';
+    
 
-    $query = "UPDATE reminders SET name = '$name', type = '$type', services_date = '$serialized_dates', start_date = '$start_date',
-    expiry_date = '$expiry_date', price = '$price',
-    contact_name = '$contact_name', contact_phone = '$contact_phone', helpline = '$helpline', notes = '$notes', file = '$uploadFile' WHERE `id` = '".$userId."'";
+    $query = "UPDATE reminders SET name = ?, type = ?, services_date = ?, start_date = ?,
+    expiry_date = ?, price = ?,
+    contact_name = ?, contact_phone = ?, helpline = ?, notes = ?, services_date_end = ? $fileUpdate WHERE `id` = ?";
 
-    $result = mysqli_query($conn, $query);
+    $stmt = mysqli_prepare($conn, $query);
+
+    // Bind parameters
+    mysqli_stmt_bind_param($stmt, "sssssssssssi", $name, $type, $serialized_dates, $start_date, $expiry_date, $price, $contact_name, $contact_phone, $helpline, $notes, $services_date_end, $userId);
+
+    // Execute the statement
+    $result = mysqli_stmt_execute($stmt);
 
     if ($result) {
         echo 'User updated successfully';
     } else {
         echo 'Error: ' . mysqli_error($conn);
     }
+
+    mysqli_stmt_close($stmt);
 }
 
-mysqli_close($conn);
+    mysqli_close($conn);
+
 ?>
